@@ -68,7 +68,7 @@ create_array_from_largest_elements:
 
 
         add r13, 4
-        cmp r14, [offset_row_max]
+        cmp r14, [offset_row_max]                       ; условие выхода из цикла
         jne for_start
         jmp for_end
 
@@ -102,15 +102,14 @@ create_array_from_largest_elements:
 
     ; цикл для вычисления максимального значения в строке и запись в новый массив
     mov r8, 0   ; для поиска максимального элемента
-    mov r9, 0
-    mov r13, 0 ; счетчик
+    mov r9, 0   ; счетчик (указатель) для записи в новый массив
     mov r14, 0 ; счетчик для строки
     mov r15, 0 ; счетчик для столбца
     for_start_new_array:
 
         for_internal_new_array:
             mov rcx, [random_array + r14 + r15]        ; элемент в текущей строке
-            cmp rcx, r8
+            cmp rcx, r8                                ; если новый элемент больше текущего максимального
             jg new_maximum
             jmp not_maximum
 
@@ -132,7 +131,6 @@ create_array_from_largest_elements:
             mov r8, 0
             add r9, 4
 
-        add r13, 4
         cmp r14, [offset_row_max]
         jne for_start_new_array
         jmp for_new_array_end
