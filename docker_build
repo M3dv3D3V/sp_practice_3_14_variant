@@ -1,0 +1,3 @@
+docker build -t "Elena" .
+docker run -itd Elena
+docker attach 41f..
