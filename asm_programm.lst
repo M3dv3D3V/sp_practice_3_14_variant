@@ -1,0 +1,200 @@
+     1                                  extern printf
+     2                                  extern scanf
+     3                                  
+     4                                  
+     5                                  section .data
+     6 00000000 53697A652061727261-         size_array_message:             db "Size array (NxN):", 10, 0
+     6 00000009 7920284E784E293A0A-
+     6 00000012 00                 
+     7 00000013 256400                      size_array_value_string         db "%d", 0
+     8 00000016 3D3D3D3D3D3D3D3D3D-         message_random_array            db "========== Random array ==========", 10, 0
+     8 0000001F 3D2052616E646F6D20-
+     8 00000028 6172726179203D3D3D-
+     8 00000031 3D3D3D3D3D3D3D0A00 
+     9 0000003A 3D3D3D3D3D3D3D3D3D-         message_result_array:           db "========== New array ==========", 10, 0
+     9 00000043 3D204E657720617272-
+     9 0000004C 6179203D3D3D3D3D3D-
+     9 00000055 3D3D3D3D0A00       
+    10                                  
+    11 0000005B 25640A00                    digit_print           db "%d", 10, 0
+    12                                  
+    13                                  section .bss
+    14 00000000 <res 00000008>              size_array:         resb 8      ; (N)
+    15 00000008 <res 00001000>              offset_row_max:     resb 4096
+    16 00001008 <res 00001000>              offset_row:         resb 4096
+    17 00002008 <res 00001000>              array:              resb 4096
+    18 00003008 <res 00001000>              result_array:       resb 4096
+    19                                  
+    20                                  
+    21                                  SECTION .text                       ; Code section.
+    22                                  GLOBAL	main                        ; "C" main program 
+    23                                  main:
+    24                                      ; rdtsc
+    25 00000000 55                          push rbp ;setup stack
+    26                                  
+    27 00000001 488D3C25[00000000]          lea rdi, [size_array_message]       ; print (message for array size)
+    28 00000009 4831C0                      xor rax, rax
+    29 0000000C E8(00000000)                call printf
+    30                                  
+    31 00000011 488D3C25[13000000]          lea rdi, [size_array_value_string]     ; scanf array size
+    32 00000019 488D3425[00000000]          lea rsi, [size_array]
+    33 00000021 4831C0                      xor rax, rax
+    34 00000024 E8(00000000)                call scanf
+    35                                  
+    36 00000029 4831C0                      xor rax, rax
+    37 0000002C 488B1425[00000000]          mov rdx, [size_array]
+    38 00000034 B804000000                  mov rax, 4
+    39 00000039 48F7E2                      mul rdx
+    40 0000003C 48890425[08100000]          mov [offset_row], rax           ; calculate offset for row (for 3*3 offset - 4 * 3 = 12 byte)
+    41                                  
+    42 00000044 4831C0                      xor rax, rax
+    43 00000047 488B0425[00000000]          mov rax, [size_array]
+    44 0000004F 48F7E0                      mul rax
+    45 00000052 4831D2                      xor rdx, rdx
+    46 00000055 BA04000000                  mov rdx, 4
+    47 0000005A 48F7E2                      mul rdx                             ; calculate maximum_offset_for_row (for 3*3 - 3*3*4 = 36 bytes)
+    48 0000005D 48890425[08000000]          mov [offset_row_max], rax
+    49                                      
+    50                                      ; filling array random numbers
+    51 00000065 41BD00000000                mov r13, 0 ; counter
+    52 0000006B 41BE00000000                mov r14, 0 ; row
+    53 00000071 41BF00000000                mov r15, 0 ; column
+    54                                      for_start:
+    55                                  
+    56                                          for_internal:
+    57 00000077 0F01F9                              rdtscp
+    58 0000007A 4825FFFF0F00                        and rax, 0x00000000000fffff
+    59 00000080 4B89843E[08200000]                  mov [array + r14 + r15], rax        ; filling array random numbers
+    60                                  
+    61 00000088 4983C704                            add r15, 4
+    62 0000008C 4C3B3C25[08100000]                  cmp r15, [offset_row]                                ; if pointer for column on the last element
+    63 00000094 75E1                                jne for_internal
+    64 00000096 EB00                                jmp for_internal_end
+    65                                          
+    66                                          for_internal_end:
+    67 00000098 4C033425[08100000]                  add r14, [offset_row] ; new row address
+    68 000000A0 41BF00000000                        mov r15, 0
+    69                                  
+    70                                  
+    71 000000A6 4983C504                        add r13, 4
+    72 000000AA 4C3B3425[08000000]              cmp r14, [offset_row_max]
+    73 000000B2 75C3                            jne for_start
+    74 000000B4 EB00                            jmp for_end
+    75                                  
+    76                                      for_end:
+    77                                  
+    78 000000B6 488D3C25[16000000]          lea rdi, [message_random_array]       ; print (message for array size)
+    79 000000BE 4831C0                      xor rax, rax
+    80 000000C1 E8(00000000)                call printf
+    81                                  
+    82                                      ; print first array from random numbers
+    83 000000C6 41BD00000000                mov r13, 0  ; counter for cycle
+    84                                      start_print_array:
+    85 000000CC 488B0425[00000000]              mov rax, [size_array]
+    86 000000D4 4801C0                          add rax, rax
+    87 000000D7 48F7E0                          mul rax
+    88 000000DA 4939C5                          cmp r13, rax                  ; condition for exit from cycle
+    89 000000DD 7420                            je end_print_array
+    90                                  
+    91 000000DF 4D8B85[08200000]                mov r8, [array+r13]
+    92                                          ; output Enter message...
+    93 000000E6 488D3C25[5B000000]              lea rdi, [digit_print] ;first argument
+    94 000000EE 4C89C6                          mov rsi, r8 ; second argument
+    95 000000F1 4831C0                          xor rax, rax
+    96 000000F4 E8(00000000)                    call printf
+    97                                  
+    98 000000F9 4983C504                        add r13, 4
+    99 000000FD EBCD                            jmp start_print_array
+   100                                  
+   101                                      end_print_array:
+   102                                  
+   103                                      ; cycle for calculate maximum number and create new array
+   104 000000FF 41B800000000                mov r8, 0   ; for search maximum number
+   105 00000105 41B900000000                mov r9, 0
+   106 0000010B 41BD00000000                mov r13, 0 ; counter
+   107 00000111 41BE00000000                mov r14, 0 ; row
+   108 00000117 41BF00000000                mov r15, 0 ; column
+   109                                      for_start_new_array:
+   110                                  
+   111                                          for_internal_new_array:
+   112 0000011D 4B8B8C3E[08200000]                  mov rcx, [array + r14 + r15]        ; element in current row
+   113 00000125 4C39C1                              cmp rcx, r8
+   114 00000128 7F02                                jg new_maximum
+   115 0000012A EB08                                jmp not_maximum
+   116                                  
+   117                                              new_maximum:
+   118 0000012C 4F8B843E[08200000]                      mov r8, [array + r14 + r15]
+   119                                  
+   120                                              not_maximum:
+   121                                  
+   122 00000134 4983C704                            add r15, 4
+   123 00000138 4C3B3C25[08100000]                  cmp r15, [offset_row]                                ; if pointer for column on the last element
+   124 00000140 75DB                                jne for_internal_new_array
+   125 00000142 EB00                                jmp for_internal_end_new_array
+   126                                          
+   127                                          for_internal_end_new_array:
+   128 00000144 4C033425[08100000]                  add r14, [offset_row] ; new row address
+   129 0000014C 41BF00000000                        mov r15, 0
+   130                                  
+   131 00000152 4D8981[08300000]                    mov [result_array + r9], r8
+   132 00000159 41B800000000                        mov r8, 0
+   133 0000015F 4983C104                            add r9, 4
+   134                                  
+   135 00000163 4983C504                        add r13, 4
+   136 00000167 4C3B3425[08000000]              cmp r14, [offset_row_max]
+   137 0000016F 75AC                            jne for_start_new_array
+   138 00000171 EB00                            jmp for_new_array_end
+   139                                  
+   140                                      for_new_array_end:
+   141                                  
+   142                                      ; duct tape for checking last element
+   143 00000173 488B0425[00000000]          mov rax, [size_array]                   
+   144 0000017B BA04000000                  mov rdx, 4
+   145 00000180 48F7E2                      mul rdx
+   146 00000183 4C8BB0[08300000]            mov r14, [result_array+rax]             ; last element in random array
+   147 0000018A 4989C0                      mov r8, rax                            ; save offset for last element
+   148                                  
+   149 0000018D 4831C0                      xor rax, rax
+   150 00000190 488B0425[00000000]          mov rax, [size_array]
+   151 00000198 48F7E0                      mul rax
+   152 0000019B BA04000000                  mov rdx, 4
+   153 000001A0 48F7E2                      mul rdx
+   154 000001A3 4C8BB8[08200000]            mov r15, [array+rax]                    ; last element in array
+   155                                  
+   156 000001AA 4D39FE                      cmp r14, r15
+   157 000001AD 7F02                        jg is_more_last_element
+   158 000001AF EB07                        jmp is_not_more_last_element
+   159                                  
+   160                                      is_more_last_element:
+   161 000001B1 4D89B0[04300000]                mov [result_array+r8-4], r14
+   162                                  
+   163                                      is_not_more_last_element:
+   164                                  
+   165 000001B8 488D3C25[3A000000]          lea rdi, [message_result_array]       ; print (message for array size)
+   166 000001C0 4831C0                      xor rax, rax
+   167 000001C3 E8(00000000)                call printf
+   168                                  
+   169 000001C8 41BD00000000                mov r13, 0  ; counter for cycle
+   170                                      start_print_result_array:
+   171 000001CE 488B0425[00000000]              mov rax, [size_array]
+   172 000001D6 BA04000000                      mov rdx, 4
+   173 000001DB 48F7E2                          mul rdx
+   174 000001DE 4939C5                          cmp r13, rax                  ; condition for exit from cycle
+   175 000001E1 7420                            je end_print_result_array
+   176                                  
+   177 000001E3 4D8B85[08300000]                mov r8, [result_array+r13]
+   178                                          ; output Enter message...
+   179 000001EA 488D3C25[5B000000]              lea rdi, [digit_print] ;first argument
+   180 000001F2 4C89C6                          mov rsi, r8 ; second argument
+   181 000001F5 4831C0                          xor rax, rax
+   182 000001F8 E8(00000000)                    call printf
+   183                                  
+   184 000001FD 4983C504                        add r13, 4
+   185 00000201 EBCB                            jmp start_print_result_array
+   186                                  
+   187                                      end_print_result_array:
+   188 00000203 5D                              pop rbp
+   189                                  
+   190 00000204 B83C000000                  mov     rax, 60         ; "exit" function number
+   191 00000209 4831FF                      xor     rdi, rdi        ; error code (0)
+   192 0000020C 0F05                        syscall                 ; terminate the program
