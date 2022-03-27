@@ -1,0 +1,3 @@
+nasm -f elf64 pr3.asm -o pr3.o
+
+g++ pr3.cpp pr3.o -no-pie -o pr3
